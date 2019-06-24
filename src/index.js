@@ -119,13 +119,16 @@ export default class SilverRequest {
     getCacheObject(){
         return new SilverRequest.cacheHandler();
     }
-    async _checkCacheExist(){
+    _checkCacheExist(){
 
         return this.getCacheObject().exist(this._getCacheFileName(), this.cacheTime);
 
     }
     _getCacheFileName(){
-        return btoa(this.url);
+        if(this.url)
+            return btoa(unescape(encodeURIComponent(this.url)));
+        else
+            return false;
     }
     _saveCache(data){
         return this.getCacheObject().store(this._getCacheFileName(), data, this.response, this.request);
@@ -134,7 +137,7 @@ export default class SilverRequest {
         this.isHardRefreshValue = bool;
         return this;
     }
-    async _readFromCache(){
+    _readFromCache(){
         return this.getCacheObject().get(this._getCacheFileName());
     }
 
@@ -173,7 +176,6 @@ export default class SilverRequest {
             this.logger(error);
         }
 
-        alert('error');
         if (this.error)
             this.error(error);
         else if(SilverRequest.globalOnError != null){
@@ -186,14 +188,13 @@ export default class SilverRequest {
 
     send(){
 
-
         this.sendCalled = true;
 
         if(this.isCachable){
 
             try {
-                if(this._checkCacheExist()){
 
+                if(this._checkCacheExist()){
                     let res = this._readFromCache();
                     if(res){
                         this.successMethod(res);
@@ -203,7 +204,7 @@ export default class SilverRequest {
                 }
             }
             catch (e) {
-
+                console.log('Cache Error', e);
             }
 
         }
