@@ -1,6 +1,6 @@
 {
   "name": "silver-request",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Wrapper For Fetch Request With Cache Ability",
   "main": "src/index.js",
   "scripts": {

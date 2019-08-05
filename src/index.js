@@ -2,6 +2,7 @@ import NetworkUnavailable from './Exception/NetworkUnavailable'
 import ConfigException from "./Exception/ConfigException";
 import {lang} from "./lang";
 import LocalStorageCacheHandler from "./CacheHandlers/LocalStorage";
+import * as Promise from "bluebird";
 
 
 
