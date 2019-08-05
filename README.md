@@ -7,7 +7,7 @@ A Fetch Wrapper with cache support that works with Redux
 ```
 import SilverRequest from "silver-request";
 
-    new SilverRequest(store)
+    new SilverRequest(dispatch)
         .setUrl('http://github.com')
         .setEvent('Github Loaded')
         .send(); 
