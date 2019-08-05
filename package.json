@@ -1,6 +1,6 @@
 {
   "name": "silver-request",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Wrapper For Fetch Request With Cache Ability",
   "main": "src/index.js",
   "scripts": {
@@ -24,5 +24,8 @@
     "jest-cli": "^24.8.0",
     "jest-fetch-mock": "^2.1.2",
     "react-addons-test-utils": "^15.6.2"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.5"
   }
 }

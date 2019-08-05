@@ -8,7 +8,12 @@ import LocalStorageCacheHandler from "./CacheHandlers/LocalStorage";
 
 export default class SilverRequest {
     constructor(store) {
-        this.store = store;
+        if(typeof store == 'function')
+            this.store = {
+                dispatch : store
+            }
+        else
+            this.store = store;
         this.runOnSuccessMethod = undefined;
         this.error = undefined;
         this.success = undefined;
@@ -269,7 +274,7 @@ export default class SilverRequest {
         options.headers = Object.assign(options.headers,this.additionalHeader, SilverRequest.additionalHeader);
 
         if(this.needLoading){
-            this.store.dispatch({
+            this.dispatch({
                 type : 'SILVER_REQUEST_SHOW_LOADING'
             });
 
@@ -327,7 +332,7 @@ export default class SilverRequest {
                 if(this.needLoading){
                     SilverRequest.ajaxInstanceRun--;
                     if (SilverRequest.ajaxInstanceRun == 0) {
-                        this.store.dispatch({
+                        this.dispatch({
                             type: 'SILVER_REQUEST_HIDE_LOADING'
                         });
                     }
