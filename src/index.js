@@ -2,7 +2,6 @@ import NetworkUnavailable from './Exception/NetworkUnavailable'
 import ConfigException from "./Exception/ConfigException";
 import {lang} from "./lang";
 import LocalStorageCacheHandler from "./CacheHandlers/LocalStorage";
-import * as Promise from "bluebird";
 
 
 
@@ -289,6 +288,14 @@ export default class SilverRequest {
         let isError = false;
         fetch(this.url, options)
             .then((response) => {
+                if(this.needLoading){
+                    SilverRequest.ajaxInstanceRun--;
+                    if (SilverRequest.ajaxInstanceRun == 0) {
+                        this.dispatch({
+                            type: 'SILVER_REQUEST_HIDE_LOADING'
+                        });
+                    }
+                }
                 if(this.logger){
                     this.logger(response);
                 }
@@ -326,10 +333,6 @@ export default class SilverRequest {
                     this._saveCache(responseJson);
             })
             .catch((error) => {
-                this.errorMethod(error);
-
-            })
-            .finally(() => {
                 if(this.needLoading){
                     SilverRequest.ajaxInstanceRun--;
                     if (SilverRequest.ajaxInstanceRun == 0) {
@@ -338,6 +341,8 @@ export default class SilverRequest {
                         });
                     }
                 }
+                this.errorMethod(error);
+
             })
         ;
 
