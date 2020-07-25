@@ -17,6 +17,7 @@
   "author": "silverboyir",
   "license": "MIT",
   "devDependencies": {
+    "@types/node-fetch": "^2.5.7",
     "babel-jest": "^24.8.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "fetch-mock": "^7.3.3",

@@ -1,92 +1,74 @@
-import NetworkUnavailable from './Exception/NetworkUnavailable'
-import ConfigException from "./Exception/ConfigException";
-import {lang} from "./lang";
-import LocalStorageCacheHandler from "./CacheHandlers/LocalStorage";
-
-
-
-
-export default class SilverRequest {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const NetworkUnavailable_1 = require("./Exception/NetworkUnavailable");
+const ConfigException_1 = require("./Exception/ConfigException");
+const lang_1 = require("./lang");
+const LocalStorage_1 = require("./CacheHandlers/LocalStorage");
+class SilverRequest {
     constructor(store) {
-        if(typeof store == 'function')
-            this.store = {
-                dispatch : store
-            }
-        else
-            this.store = store;
-        this.runOnSuccessMethod = undefined;
-        this.error = undefined;
-        this.success = undefined;
-        this.logger = undefined;
+        this.store = store;
         this.needLoading = false;
         this.additionalHeader = {};
-        this.sendCalled = false;
         this.method = 'GET';
         this.isHardRefreshValue = false;
         this.response = null;
         this.request = null;
+        this.cacheTime = 0;
+        this.url = '';
+        this.isCachable = false;
+        this.data = {};
         this.cacheTime = SilverRequest.cacheTime;
     }
-
-    translate(message){
-        return SilverRequest.languageFile[SilverRequest.lang][message];
+    translate(message) {
+        return SilverRequest.languageData[SilverRequest.lang][message];
     }
-    setLogger(func){
-
-        if(typeof func != 'function'){
-            throw new ConfigException(this.translate('logger_is_not_a_function'));
+    setLogger(func) {
+        if (typeof func != 'function') {
+            throw new ConfigException_1.default(this.translate('logger_is_not_a_function'));
         }
-
         this.logger = func;
-        return this
+        return this;
     }
-    setRunOnSuccess(func){
-        if(typeof func != 'function'){
-            throw new ConfigException(this.translate('run_on_success_is_not_a_function'));
+    setRunOnSuccess(func) {
+        if (typeof func != 'function') {
+            throw new ConfigException_1.default(this.translate('run_on_success_is_not_a_function'));
         }
         this.runOnSuccessMethod = func;
         return this;
     }
     setOnSuccess(func) {
-
         if (!func || typeof func != 'function' && typeof func != 'object') {
-            throw new ConfigException(this.translate('success_must_be_function_or_object'));
-        } else if(typeof func == 'object' && typeof func.run != 'function')
-            throw new ConfigException(this.translate('success_must_have_a_method_with_name_run'));
-
+            throw new ConfigException_1.default(this.translate('success_must_be_function_or_object'));
+        }
+        else if (typeof func == 'object' && typeof func.run != 'function')
+            throw new ConfigException_1.default(this.translate('success_must_have_a_method_with_name_run'));
         this.success = func;
         return this;
     }
-    setOnError(func){
-
-        if(typeof func != 'function'){
-            throw new ConfigException(this.translate('error_handler_is_not_a_function'));
+    setOnError(func) {
+        if (typeof func != 'function') {
+            throw new ConfigException_1.default(this.translate('error_handler_is_not_a_function'));
         }
-
         this.error = func;
         return this;
     }
     setMethod(method) {
-
-        if(SilverRequest.methods[method] === undefined)
-            throw new ConfigException(this.translate('method_must_be_one_of').replace('%s', method));
-
+        if (SilverRequest.methods[method] === undefined)
+            throw new ConfigException_1.default(this.translate('method_must_be_one_of').replace('%s', method));
         this.method = method;
-        if(method != 'GET')
+        if (method != 'GET')
             this.setIsCachable(false);
         return this;
     }
-
     setIsCachable(boolVal) {
         this.isCachable = boolVal;
         return this;
     }
     setUrl(url) {
         this.url = url;
-
         return this;
     }
-    getUrl(){
+    getUrl() {
         return this.url;
     }
     setEvent(event) {
@@ -97,151 +79,113 @@ export default class SilverRequest {
         this.data = data;
         return this;
     }
-    setNeedLoading(boolVal){
+    setNeedLoading(boolVal) {
         this.needLoading = boolVal;
         return this;
     }
-
-    addAdditionalHeader(key , val){
+    addAdditionalHeader(key, val) {
         SilverRequest.additionalHeader[key] = val;
         return this;
     }
-
-    setAdditionalHeader(object){
-
+    setAdditionalHeader(object) {
         SilverRequest.additionalHeader = object;
         return this;
     }
-
-    setCacheTime(time){
+    setCacheTime(time) {
         this.cacheTime = time;
     }
-
-    /**
-     *
-     * @returns {CacheInterface}
-     */
-    getCacheObject(){
+    getCacheObject() {
         return new SilverRequest.cacheHandler();
     }
-    _checkCacheExist(){
-
+    _checkCacheExist() {
         return this.getCacheObject().exist(this._getCacheFileName(), this.cacheTime);
-
     }
-    _getCacheFileName(){
-        if(this.url)
+    _getCacheFileName() {
+        if (this.url)
             return btoa(unescape(encodeURIComponent(this.url)));
         else
-            return false;
+            return null;
     }
-    _saveCache(data){
+    _saveCache(data) {
         return this.getCacheObject().store(this._getCacheFileName(), data, this.response, this.request);
     }
-    setIsHardRefresh(bool){
+    setIsHardRefresh(bool) {
         this.isHardRefreshValue = bool;
         return this;
     }
-    _readFromCache(){
+    _readFromCache() {
         return this.getCacheObject().get(this._getCacheFileName());
     }
-
-    dispatch(obj){
-
-        // TODO use global and options
-        this.store.dispatch(obj)
+    dispatch(obj) {
+        this.store.dispatch(obj);
     }
-
-    successMethod(responseJson){
+    successMethod(responseJson) {
         if (this.logger) {
             this.logger(responseJson);
         }
-
         if (this.runOnSuccessMethod)
             this.runOnSuccessMethod(responseJson);
         if (this.success) {
-            if (typeof this.success == 'function') {
-                this.success(responseJson);
-            } else
+            if ("run" in this.success)
                 this.success.run(responseJson);
-        } else if (this.event && this.event !== '') {
-            if(SilverRequest.globalOnSuccess != null)
+            else
+                this.success(responseJson);
+        }
+        else if (this.event && this.event !== '') {
+            if (SilverRequest.globalOnSuccess != null)
                 SilverRequest.globalOnSuccess(responseJson);
-
-            this.dispatch({type: this.event, success: true, data: responseJson});
-
+            this.dispatch({ type: this.event, success: true, data: responseJson });
         }
         else {
-            if(SilverRequest.globalOnSuccess != null)
+            if (SilverRequest.globalOnSuccess != null)
                 SilverRequest.globalOnSuccess(responseJson);
         }
     }
-    errorMethod(error){
-        if(this.logger){
+    errorMethod(error) {
+        if (this.logger) {
             this.logger(error);
         }
-
         if (this.error)
             this.error(error);
-        else if(SilverRequest.globalOnError != null){
+        else if (SilverRequest.globalOnError != null) {
             SilverRequest.globalOnError(error);
         }
-        else if(error.name) {
+        else if (error.name) {
             alert(error.name);
         }
     }
-
-    send(){
-
-        this.sendCalled = true;
-
-        if(this.isCachable){
-
+    send() {
+        if (this.isCachable) {
             try {
-
-                if(this._checkCacheExist()){
+                if (this._checkCacheExist()) {
                     let res = this._readFromCache();
-                    if(res){
+                    if (res) {
                         this.successMethod(res);
                         return;
                     }
-
                 }
             }
             catch (e) {
                 console.log('Cache Error', e);
             }
-
         }
-
         let isConnected = false;
-        if(window.navigator && window.navigator.onLine){
+        if (window.navigator && window.navigator.onLine) {
             isConnected = true;
         }
-
-        if(!isConnected)
-        {
-            if(this.logger)
+        if (!isConnected) {
+            if (this.logger)
                 this.logger('Network Is Unavailable');
-
-            this.errorMethod(new NetworkUnavailable(this.translate('network_unavailable')));
+            this.errorMethod(new NetworkUnavailable_1.default(this.translate('network_unavailable')));
             return false;
         }
-
-
-        var options = {
+        let options = {
             method: this.method,
-            headers: {
-                // 'content-type': 'application/x-www-form-urlencoded'
-                'Accept': 'application/json'
-            },
         };
-
-
-
-        if(this.method != 'GET'){
-            if(this.method === 'DELETE') {
-                options['Content-Type'] = 'application/x-www-form-urlencoded';
+        let headers = new Headers();
+        headers.append('Accept', 'application/json');
+        if (this.method != 'GET') {
+            if (this.method === 'DELETE') {
                 var formBody = [];
                 for (var property in this.data) {
                     var encodedKey = encodeURIComponent(property);
@@ -249,124 +193,105 @@ export default class SilverRequest {
                     formBody.push(encodedKey + "=" + encodedValue);
                 }
                 options.body = formBody.join("&");
-                options.headers['Content-Type'] =  'application/x-www-form-urlencoded;charset=UTF-8';
+                headers.append['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
             }
             else {
-                this.formData  = new FormData();
-                for(var name in this.data) {
+                let formData = new FormData();
+                for (var name in this.data) {
                     var val = this.data[name];
-                    if(val == undefined)
+                    if (val == undefined)
                         val = '';
-                    this.formData.append(name , val);
+                    formData.append(name, val);
                 }
-
-                options.body = this.formData;
-
+                options.body = formData;
             }
-
-
-
         }
         else {
-            //
-            options['Content-Type'] =  'application/json';
+            headers.append['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
         }
-        options.headers = Object.assign(options.headers,this.additionalHeader, SilverRequest.additionalHeader);
-
-        if(this.needLoading){
+        let allAdditionalHeaders = Object.assign(options.headers, this.additionalHeader, SilverRequest.additionalHeader);
+        for (let i in allAdditionalHeaders) {
+            headers.append(i, allAdditionalHeaders[i]);
+        }
+        options.headers = headers;
+        this.request = new Request(this.getUrl(), options);
+        if (this.needLoading) {
             this.dispatch({
-                type : 'SILVER_REQUEST_SHOW_LOADING'
+                type: 'SILVER_REQUEST_SHOW_LOADING'
             });
-
-            if(SilverRequest.ajaxInstanceRun == undefined || SilverRequest.ajaxInstanceRun < 0)
+            if (SilverRequest.ajaxInstanceRun == undefined || SilverRequest.ajaxInstanceRun < 0)
                 SilverRequest.ajaxInstanceRun = 0;
             SilverRequest.ajaxInstanceRun++;
         }
-
-        if(this.logger)
+        if (this.logger)
             this.logger(options);
         let isError = false;
-        fetch(this.url, options)
+        fetch(this.request)
             .then((response) => {
-                if(this.needLoading){
-                    SilverRequest.ajaxInstanceRun--;
-                    if (SilverRequest.ajaxInstanceRun == 0) {
-                        this.dispatch({
-                            type: 'SILVER_REQUEST_HIDE_LOADING'
-                        });
-                    }
-                }
-                if(this.logger){
-                    this.logger(response);
-                }
-
-                if(response.status != 200){
-                    isError = true;
-                    // console.log(response.json());
-
-                    response.json().then((res) => {
-                        try {
-                            if(res.message && res.message != '')
-                                throw new Error(res.message);
-                            else
-                                throw new Error(this.translate('unknown_error'));
-                        }
-                        catch (e) {
-                            this.errorMethod(e);
-                        }
-
-
-
+            if (this.needLoading) {
+                SilverRequest.ajaxInstanceRun--;
+                if (SilverRequest.ajaxInstanceRun == 0) {
+                    this.dispatch({
+                        type: 'SILVER_REQUEST_HIDE_LOADING'
                     });
-
-                    throw new Error('');
-
-                    //
                 }
-
-                return response.json()
-            })
-            .then((responseJson) => {
-
-                this.successMethod(responseJson);
-                if(this.isCachable || this.isHardRefreshValue)
-                    this._saveCache(responseJson);
-            })
-            .catch((error) => {
-                if(this.needLoading){
-                    SilverRequest.ajaxInstanceRun--;
-                    if (SilverRequest.ajaxInstanceRun == 0) {
-                        this.dispatch({
-                            type: 'SILVER_REQUEST_HIDE_LOADING'
-                        });
+            }
+            if (this.logger) {
+                this.logger(response);
+            }
+            if (response.status != 200) {
+                isError = true;
+                response.json().then((res) => {
+                    try {
+                        if (res.message && res.message != '')
+                            throw new Error(res.message);
+                        else
+                            throw new Error(this.translate('unknown_error'));
                     }
+                    catch (e) {
+                        this.errorMethod(e);
+                    }
+                });
+                throw new Error('');
+            }
+            this.response = response;
+            return response.json();
+        })
+            .then((responseJson) => {
+            this.successMethod(responseJson);
+            if (this.isCachable || this.isHardRefreshValue)
+                this._saveCache(responseJson);
+        })
+            .catch((error) => {
+            if (this.needLoading) {
+                SilverRequest.ajaxInstanceRun--;
+                if (SilverRequest.ajaxInstanceRun == 0) {
+                    this.dispatch({
+                        type: 'SILVER_REQUEST_HIDE_LOADING'
+                    });
                 }
-                this.errorMethod(error);
-
-            })
-        ;
-
-
-
-
+            }
+            this.errorMethod(error);
+        });
     }
 }
+exports.default = SilverRequest;
+SilverRequest.cacheTime = 30 * 60 * 1000;
+SilverRequest.ajaxInstanceRun = 0;
 SilverRequest.additionalHeader = {};
 SilverRequest.lang = 'en_US';
 SilverRequest.methods = {
-    GET : 'GET',
-    POST : 'POST',
-    DELETE : 'DELETE',
-    PULL : 'PULL',
-    PATCH : 'PATCH',
-    PUSH : 'PUSH'
+    GET: 'GET',
+    POST: 'POST',
+    DELETE: 'DELETE',
+    PULL: 'PULL',
+    PATCH: 'PATCH',
+    PUSH: 'PUSH'
 };
 SilverRequest.cacheHandlers = {
-    localStorage : LocalStorageCacheHandler,
-    custom : 'custom'
-}
+    localStorage: LocalStorage_1.default,
+};
 SilverRequest.cacheHandler = SilverRequest.cacheHandlers.localStorage;
-SilverRequest.cacheTime = 30*60*1000;
 SilverRequest.globalOnSuccess = null;
 SilverRequest.globalOnError = null;
-SilverRequest.languageFile = lang;
+SilverRequest.languageData = lang_1.lang;
