@@ -2,7 +2,9 @@
   "name": "silver-request",
   "version": "1.0.4",
   "description": "Wrapper For Fetch Request With Cache Ability",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "prepublish": "tsc",
   "scripts": {
     "test": "jest"
   },
@@ -17,13 +19,18 @@
   "author": "silverboyir",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^26.0.7",
     "@types/node-fetch": "^2.5.7",
+    "@types/redux": "^3.6.0",
     "babel-jest": "^24.8.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
-    "fetch-mock": "^7.3.3",
-    "jest": "^24.8.0",
-    "jest-cli": "^24.8.0",
-    "jest-fetch-mock": "^2.1.2",
-    "react-addons-test-utils": "^15.6.2"
+    "fetch-mock": "^9.10.5",
+    "jest": "^26.1.0",
+    "jest-cli": "^26.1.0",
+    "jest-fetch-mock": "^3.0.3",
+    "react-addons-test-utils": "*",
+    "ts-jest": "^26.1.4",
+    "typescript": "^3.9.7",
+    "webpack": "^4.44.0"
   }
 }

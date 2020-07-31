@@ -8,7 +8,7 @@ export default class CacheAbstract implements CacheInterface {
     {
         return false;
     }
-    get(key : string){
+    get(key : string) : {[k: string]: any} | false{
         return false;
     }
 }

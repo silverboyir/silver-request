@@ -1,27 +1,27 @@
-import SilverRequest from "./src";
+const fetch = require('node-fetch');
+global.Headers = fetch.Headers;
+global.Request = fetch.Request;
+import SilverRequest from "./src/index";
+
 window.alert = jest.fn();
 const fetchMock = require('fetch-mock');
 
-let obj;
+let obj : SilverRequest;
 beforeEach(() => {
-    obj = new SilverRequest({
-        dispatch : jest.fn()
-    })
+    obj = new SilverRequest(jest.fn())
 
 })
 
 
 beforeAll(() => {
+
+   
+
     fetchMock.mock('/success', { foo: 'bar' });
     fetchMock.mock('/bad', 500);
 
 })
-test('Test Translate', () => {
-    expect(obj.translate('test')).toBe('Test', 'English test');
-    SilverRequest.lang = 'fa_IR';
-    expect(obj.translate('test')).toBe('تست', 'Foreign Language test');
-    SilverRequest.lang = 'en_US';
-})
+
 
 test('Test logger', () => {
     let logger = jest.fn();
@@ -51,31 +51,34 @@ test('test setRunOnSuccess', () => {
         expect(obj.setRunOnSuccess.bind(obj, null)).toThrow();
 })
 
-test('test setOnSuccess', () => {
+test('test setOnSuccess', async () => {
     let runOnSuccess = jest.fn();
     expect(obj.setOnSuccess(runOnSuccess)).toBeInstanceOf(SilverRequest);
 
     obj.setUrl('/success');
-    obj.send();
+    await obj.send();
 
-    setTimeout(() => {
-        expect(setOnSuccess).toHaveBeenCalled();
-    }, 200)
+    expect(runOnSuccess).toHaveBeenCalled();
 
     expect(obj.setOnSuccess.bind(obj, null)).toThrow();
 });
 
-test('test setOnError', () => {
+test('test setOnError', async () => {
+    
     let setOnError = jest.fn();
     expect(obj.setOnError(setOnError)).toBeInstanceOf(SilverRequest);
     //
-    obj.setUrl('/error');
-    obj.send();
-    setTimeout(() => {
+    obj.setUrl('/bad');
+    try {
+        let pr : Promise<any> = await obj.send();
+        
+    }
+    catch(e){
 
-        expect(setOnError).toHaveBeenCalled();
+    }
 
-    }, 200);
+    expect(setOnError).toHaveBeenCalled();
 
     expect(obj.setOnError.bind(obj, null)).toThrow();
+  
 })

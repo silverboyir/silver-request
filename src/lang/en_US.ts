@@ -1,7 +1,7 @@
 import { langInterface } from "../common/types";
 
-export let langFile : langInterface = {
-    logger_is_not_a_function : 'Logger Is Not A Function',
+let langFile : langInterface = {
+    logger_is_not_a_function : 'Logger Should Be a function',
     run_on_success_is_not_a_function : 'Run On Success Is Not A Function',
     success_must_be_function_or_object : 'Success Must Be A Function Or An Object',
     success_must_have_a_method_with_name_run : 'Success Must Have A Method With Name Run',
@@ -10,3 +10,4 @@ export let langFile : langInterface = {
     network_unavailable : 'Network Is Unavailable',
     unknown_error : 'Unknown Error Happen',
 }
+export default langFile;

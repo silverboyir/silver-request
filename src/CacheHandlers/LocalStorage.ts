@@ -6,7 +6,7 @@ interface dataType {
 }
 
 export default class LocalStorageCacheHandler extends CacheAbstract{
-    get(key : string) {
+    get(key : string) : {[k: string]: any} | false {
 
         let jsonData = this.getDataFromStorage(key);
         if(jsonData){

@@ -2,16 +2,18 @@ import NetworkUnavailable from './Exception/NetworkUnavailable'
 import ConfigException from "./Exception/ConfigException";
 import LocalStorageCacheHandler from "./CacheHandlers/LocalStorage";
 import en_US from "./lang/en_US"
+import {Dispatch} from 'redux'
 
-import {SuccessObject, CacheInterfaceConstructable, langDictionary, langInterface} from "./common/types"
+import {SuccessObject, CacheInterfaceConstructable, langDictionary} from "./common/types"
+import CacheInterface from './CacheHandlers/CacheInterface';
 
 
 export default class SilverRequest {
 
     private runOnSuccessMethod : (jsonResponse : object) => null;
     private success : ((jsonResponse : object) => null) | SuccessObject;
-    private error : ((e : Error) => null) | null;
-    private logger : ((a : any) => null) | null;
+    private error : ((e : Error) => any) | null;
+    private logger : ((a : any) => any) | null;
     private needLoading : boolean = false;
     private additionalHeader : object = {};
     private method : string = 'GET';
@@ -45,47 +47,59 @@ export default class SilverRequest {
     public static globalOnSuccess : ((e : object) => any) | null = null;
     public static globalOnError : ((e : Error) => any) | null = null;
 
-    // TODO type declarration
     public static languageData : langDictionary = {
         'en_US' : en_US
     };
 
 
-    constructor(private store) {
+    constructor(private store : Dispatch) {
     
         this.cacheTime = SilverRequest.cacheTime;
+        
     }
 
-    translate(message){
-        return SilverRequest.languageData[SilverRequest.lang][message];
+    translate(message : string | number | null) : string {
+        
+        return ""+message;
     }
-    setLogger(func){
-
+    setLogger(func : ((a : any) => any)) : SilverRequest{
         if(typeof func != 'function'){
-            throw new ConfigException(this.translate());
+            throw new ConfigException(this.translate(SilverRequest.languageData[SilverRequest.lang].logger_is_not_a_function));
         }
 
         this.logger = func;
         return this
     }
-    setRunOnSuccess(func){
+    setRunOnSuccess(func : (jsonResponse : object) => null) : SilverRequest{
         if(typeof func != 'function'){
-            throw new ConfigException(this.translate('run_on_success_is_not_a_function'));
+            throw new ConfigException(
+                this.translate(
+                    SilverRequest.languageData[SilverRequest.lang].run_on_success_is_not_a_function
+                    )
+                );
         }
         this.runOnSuccessMethod = func;
         return this;
     }
-    setOnSuccess(func) {
+    setOnSuccess(func : ((jsonResponse : object) => null) | SuccessObject) : SilverRequest {
 
         if (!func || typeof func != 'function' && typeof func != 'object') {
-            throw new ConfigException(this.translate('success_must_be_function_or_object'));
+            throw new ConfigException(
+                this.translate(
+                    SilverRequest.languageData[SilverRequest.lang].success_must_be_function_or_object
+                    )
+            );
         } else if(typeof func == 'object' && typeof func.run != 'function')
-            throw new ConfigException(this.translate('success_must_have_a_method_with_name_run'));
+            throw new ConfigException(
+                this.translate(
+                    SilverRequest.languageData[SilverRequest.lang].success_must_have_a_method_with_name_run
+                )
+            );
 
         this.success = func;
         return this;
     }
-    setOnError(func){
+    setOnError(func : ((e : Error) => any)) : SilverRequest{
 
         if(typeof func != 'function'){
             throw new ConfigException(this.translate('error_handler_is_not_a_function'));
@@ -94,7 +108,7 @@ export default class SilverRequest {
         this.error = func;
         return this;
     }
-    setMethod(method) {
+    setMethod(method : string) : SilverRequest {
 
         if(SilverRequest.methods[method] === undefined)
             throw new ConfigException(this.translate('method_must_be_one_of').replace('%s', method));
@@ -105,82 +119,79 @@ export default class SilverRequest {
         return this;
     }
 
-    setIsCachable(boolVal) {
+    setIsCachable(boolVal : boolean) : SilverRequest {
         this.isCachable = boolVal;
         return this;
     }
-    setUrl(url) {
+    setUrl(url : string) : SilverRequest {
         this.url = url;
 
         return this;
     }
-    getUrl(){
+    getUrl() : string{
         return this.url;
     }
-    setEvent(event) {
+    setEvent(event : string) : SilverRequest {
         this.event = event;
         return this;
     }
-    setData(data) {
+    setData(data : {[k: string]: any}) : SilverRequest{
         this.data = data;
         return this;
     }
-    setNeedLoading(boolVal){
+    setNeedLoading(boolVal : boolean) : SilverRequest{
         this.needLoading = boolVal;
         return this;
     }
 
-    addAdditionalHeader(key , val){
+    addAdditionalHeader(key : string , val : string) : SilverRequest{
         SilverRequest.additionalHeader[key] = val;
         return this;
     }
 
-    setAdditionalHeader(object){
+    setAdditionalHeader(object : {[k : string] : string}) : SilverRequest{
 
         SilverRequest.additionalHeader = object;
         return this;
     }
 
-    setCacheTime(time){
+    setCacheTime(time : number) : SilverRequest{
         this.cacheTime = time;
+        return this;
     }
 
-    /**
-     *
-     * @returns {CacheInterface}
-     */
-    getCacheObject(){
+    getCacheObject() : CacheInterface{
         return new SilverRequest.cacheHandler();
     }
-    _checkCacheExist(){
+    private _checkCacheExist() : boolean{
 
         return this.getCacheObject().exist(this._getCacheFileName(), this.cacheTime);
 
     }
-    _getCacheFileName(){
+    private _getCacheFileName() : string {
         if(this.url)
             return btoa(unescape(encodeURIComponent(this.url)));
         else
             return null;
     }
-    _saveCache(data){
+    _saveCache(data : {[k: string]: any}) : boolean{
         return this.getCacheObject().store(this._getCacheFileName(), data, this.response, this.request);
     }
-    setIsHardRefresh(bool){
+    setIsHardRefresh(bool : boolean) : SilverRequest {
         this.isHardRefreshValue = bool;
         return this;
     }
-    _readFromCache(){
+    private _readFromCache() : {[k: string]: any} | false {
         return this.getCacheObject().get(this._getCacheFileName());
     }
 
-    dispatch(obj){
+    dispatch(obj : {type : string, success? : boolean, data? : any , error? : boolean}){
 
         // TODO use global and options
-        this.store.dispatch(obj)
+        this.store(obj)
     }
 
-    successMethod(responseJson){
+    successMethod(responseJson : {[k : string] : any}){
         if (this.logger) {
             this.logger(responseJson);
         }
@@ -204,8 +215,9 @@ export default class SilverRequest {
             if(SilverRequest.globalOnSuccess != null)
                 SilverRequest.globalOnSuccess(responseJson);
         }
+        return;
     }
-    errorMethod(error){
+    errorMethod(error : Error){
         if(this.logger){
             this.logger(error);
         }
@@ -218,9 +230,12 @@ export default class SilverRequest {
         else if(error.name) {
             alert(error.name);
         }
+        return;
     }
 
-    send(){
+
+    
+    send() : Promise<any> | false {
 
 
         if(this.isCachable){
@@ -237,7 +252,8 @@ export default class SilverRequest {
                 }
             }
             catch (e) {
-                console.log('Cache Error', e);
+                if(this.logger)
+                    this.logger(e);
             }
 
         }
@@ -296,7 +312,7 @@ export default class SilverRequest {
             //
             headers.append['Content-Type'] =  'application/x-www-form-urlencoded;charset=UTF-8';
         }
-        let allAdditionalHeaders = Object.assign(options.headers,this.additionalHeader, SilverRequest.additionalHeader);
+        let allAdditionalHeaders = Object.assign(this.additionalHeader, SilverRequest.additionalHeader);
 
         for(let i in allAdditionalHeaders){
             headers.append(i, allAdditionalHeaders[i]);
@@ -305,10 +321,6 @@ export default class SilverRequest {
         options.headers = headers;
 
         this.request = new Request(this.getUrl(), options);
-        
-
-
-
         if(this.needLoading){
             this.dispatch({
                 type : 'SILVER_REQUEST_SHOW_LOADING'
@@ -324,8 +336,9 @@ export default class SilverRequest {
         if(this.logger)
             this.logger(options);
         let isError = false;
-        // fetch(this.url, options)
-        fetch(this.request)
+
+        return new Promise((resolutionFunc, rejectFunc) => {
+            fetch(this.request)
             .then((response : Response) => {
                 if(this.needLoading){
                     SilverRequest.ajaxInstanceRun--;
@@ -341,8 +354,6 @@ export default class SilverRequest {
 
                 if(response.status != 200){
                     isError = true;
-                    // console.log(response.json());
-
                     response.json().then((res) => {
                         try {
                             if(res.message && res.message != '')
@@ -353,10 +364,7 @@ export default class SilverRequest {
                         catch (e) {
                             this.errorMethod(e);
                         }
-
-
-
-                    });
+                    }).catch(() => {});
 
                     throw new Error('');
 
@@ -371,6 +379,7 @@ export default class SilverRequest {
                 this.successMethod(responseJson);
                 if(this.isCachable || this.isHardRefreshValue)
                     this._saveCache(responseJson);
+                resolutionFunc(responseJson)
             })
             .catch((error) => {
                 if(this.needLoading){
@@ -383,8 +392,12 @@ export default class SilverRequest {
                 }
                 this.errorMethod(error);
 
+                rejectFunc(error);
+
             })
         ;
+        })
+        
 
 
 
